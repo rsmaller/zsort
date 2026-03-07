@@ -61,7 +61,7 @@ pub fn merge_sort(allocator: anytype, buf: anytype) !void {
         var current_frame = &stack.allocation[stack.current_index - 1];
         const left: usize = current_frame.left;
         const right: usize = current_frame.right;
-        const middle = left + ((right - left) / 2);
+        const middle = (right + left) / 2;
         switch (current_frame.state) {
             .NO_RECURSE => {
                 if (left >= right) {
@@ -81,7 +81,6 @@ pub fn merge_sort(allocator: anytype, buf: anytype) !void {
             }
         }
     }
-    return;
 }
 
 fn merge(buf: anytype, tempbuf: anytype, min: usize, mid: usize, max: usize) !void {
@@ -91,20 +90,20 @@ fn merge(buf: anytype, tempbuf: anytype, min: usize, mid: usize, max: usize) !vo
     @memcpy(right[0..], buf[mid+1..max+1]);
     var i: usize = 0;
     var j: usize = 0;
-    var buf__index: usize = min;
-    while (i < left.len and j < right.len) : (buf__index += 1) {
+    var buf_index: usize = min;
+    while (i < left.len and j < right.len) : (buf_index += 1) {
         if (left[i] <= right[j]) {
-            buf[buf__index] = left[i];
+            buf[buf_index] = left[i];
             i += 1;
         } else {
-            buf[buf__index] = right[j];
+            buf[buf_index] = right[j];
             j += 1;
         }
     }
     if (i<left.len) {
-        @memcpy(buf[buf__index..buf__index+left.len-i], left[i..]);
+        @memcpy(buf[buf_index..buf_index+left.len-i], left[i..]);
     } else if (j < right.len) {
-        @memcpy(buf[buf__index..buf__index+right.len-j], right[j..]);
+        @memcpy(buf[buf_index..buf_index+right.len-j], right[j..]);
     }
 }
 
