@@ -287,6 +287,13 @@ pub inline fn quick_sort_partition_lomuto(buf: anytype, min: usize, max: usize) 
     return i;
 }
 
+pub inline fn quick_sort_partition_hoare(buf: anytype, min: usize, max: usize) usize {
+    _ = buf;
+    _ = min;
+    _ = max;
+    // Hoare was not good. Implement later.
+}
+
 pub fn quick_sort_recursive(allocator: anytype, buf: anytype) !void {
    quick_sort_recursive_internal(allocator, buf, 0, buf.len-1);
 }
