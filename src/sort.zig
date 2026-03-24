@@ -130,6 +130,24 @@ pub fn shuffle(buf: anytype) void {
     }
 }
 
+pub fn reversed_identity(buf: anytype) void {
+    const T = @TypeOf(buf[0]);
+    const max = std.math.maxInt(T);
+    if (buf.len > max) {
+        for (0..buf.len) |i| {
+            if (max < i + 1) {
+                buf[i] = 0;
+                continue;
+            }
+            buf[i] = @as(T, @intCast(max - i - 1));
+        }
+    } else {
+        for (0..buf.len) |i| {
+            buf[i] = @as(T, @intCast(buf.len - i - 1));
+        }
+    }
+}
+
 pub fn merge_sort_stack(allocator: anytype, buf: anytype) !void {
     const tempbuf = try allocator.alloc(@TypeOf(buf[0]), buf.len);
     defer allocator.free(tempbuf);
@@ -285,10 +303,27 @@ pub inline fn quick_sort_partition_lomuto(buf: anytype, min: usize, max: usize) 
     return i;
 }
 
+pub inline fn int_median(buf: anytype, a: anytype, b: anytype, c: anytype) @TypeOf(a) {
+    const x = buf[a];
+    const y = buf[b];
+    const z = buf[c];
+    if (x <= y) {
+        if (x >= z) return a; // If x is less than y and greater than z, x is the median.
+        if (y <= z) return b; // If y is greater than x and less than z, y is the median.
+        return c; // If neither of the above are the median, then z is.
+    } else {
+        if (x <= z) return a; // If x is greater than y and less than z, x is the median.
+        if (y >= z) return b; // If y is less than x and greater than z, y is the median.
+        return c; // If neither of the above are the median, then z is.
+    }
+}
+
 pub inline fn quick_sort_partition_hoare(buf: anytype, min: usize, max: usize) usize {
     var i: usize = min;
     var j: usize = max;
-    const pivot = buf[min];
+    const mid = (min + max) / 2;
+    const best_median = int_median(buf, min, mid, max);
+    const pivot = buf[best_median];
     while (true) {
         while (i < max and generic_comparator(buf[i], pivot, .LT)) {
             i += 1;
@@ -379,7 +414,7 @@ pub fn test_sorter(sorter_name: []const u8, allocator: anytype, sorter: anytype,
     }
     try outstream.print("Is sorted: {}\n\n", .{is_sorted_ascending(buf)});
     try outstream.flush();
-    shuffle(buf);
+    reversed_identity(buf);
     return result;
 }
 

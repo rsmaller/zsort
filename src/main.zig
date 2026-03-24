@@ -25,10 +25,12 @@ pub fn main() !void {
     const random_buf = try allocator.alloc(u16, n);
     defer allocator.free(random_buf);
 
-    random_buf[0] = 1;
-    for (0..random_buf.len) |i| {
-        random_buf[i] = std.crypto.random.intRangeAtMost(u16, 0, 100);
-    }
+    // random_buf[0] = 1; // For better case where array is randomized.
+    // for (0..random_buf.len) |i| {
+    //     random_buf[i] = std.crypto.random.intRangeAtMost(u16, 0, 100);
+    // }
+
+    sort.reversed_identity(random_buf);
 
     var results: [8]sort.SortResult = undefined;
     var resultIndex: usize = 0;
