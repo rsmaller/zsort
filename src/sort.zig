@@ -276,7 +276,7 @@ pub inline fn quick_sort_partition_lomuto(buf: anytype, min: usize, max: usize) 
     const key = buf[max]; // Assume pivot is at the end; swap pivot into correct place after.
     var i: usize = min;
     for (min..max) |j| {
-        if (buf[j] < key) {
+        if (generic_comparator(buf[j], key, .LT)) {
             std.mem.swap(@TypeOf(buf[0]), &buf[i], &buf[j]); // Push everything to the back.
             i += 1;
         }
@@ -290,13 +290,13 @@ pub inline fn quick_sort_partition_hoare(buf: anytype, min: usize, max: usize) u
     var j: usize = max;
     const pivot = buf[min];
     while (true) {
-        while (i < max and buf[i] < pivot) {
+        while (i < max and generic_comparator(buf[i], pivot, .LT)) {
             i += 1;
         }
-        while (buf[j] > pivot) {
+        while (generic_comparator(buf[j], pivot, .GT)) {
             j -= 1;
         }
-        if (i >= j) {
+        if (generic_comparator(i, j, .GE)) {
             break;
         }
         std.mem.swap(@TypeOf(buf[0]), &buf[i], &buf[j]);
@@ -307,16 +307,20 @@ pub inline fn quick_sort_partition_hoare(buf: anytype, min: usize, max: usize) u
 }
 
 pub fn quick_sort_recursive(allocator: anytype, buf: anytype) !void {
-    quick_sort_recursive_internal(allocator, buf, 0, buf.len - 1);
+    try quick_sort_recursive_internal(allocator, buf, 0, buf.len - 1);
 }
 
-fn quick_sort_recursive_internal(allocator: anytype, buf: anytype, min: usize, max: usize) void {
-    if (min >= max) return;
-    const new_pivot = quick_sort_partition_hoare(buf, min, max);
-    if (new_pivot != 0) {
-        quick_sort_recursive_internal(allocator, buf, min, new_pivot);
+fn quick_sort_recursive_internal(allocator: anytype, buf: anytype, min: usize, max: usize) !void {
+    if (max - min <= 16) {
+        try insertion_sort(allocator, buf[min .. max + 1]);
+        return;
     }
-    quick_sort_recursive_internal(allocator, buf, new_pivot + 1, max);
+    var min_side = min;
+    while (min_side < max) {
+        const new_pivot = quick_sort_partition_hoare(buf, min_side, max);
+        try quick_sort_recursive_internal(allocator, buf, min_side, new_pivot);
+        min_side = new_pivot + 1;
+    }
 }
 
 pub fn quick_sort_stack(allocator: anytype, buf: anytype) !void {
@@ -368,7 +372,11 @@ pub fn test_sorter(sorter_name: []const u8, allocator: anytype, sorter: anytype,
         .name = sorter_name,
         .efficiency = @as(f128, @floatFromInt(buf.len)) / time,
     };
-    try outstream.print(" ({} seconds)\n", .{result.time_seconds});
+    if (result.time_seconds < 1.0) {
+        try outstream.print(" ({:.3}ms)\n", .{result.time_seconds * 1000});
+    } else {
+        try outstream.print(" ({:.3}s)\n", .{result.time_seconds});
+    }
     try outstream.print("Is sorted: {}\n\n", .{is_sorted_ascending(buf)});
     try outstream.flush();
     shuffle(buf);

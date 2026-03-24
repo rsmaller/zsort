@@ -8,6 +8,11 @@ pub fn main() !void {
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
+    defer {
+        if (gpa.deinit() == std.heap.Check.leak) {
+            std.debug.print("Aaaaa leak\n", .{});
+        }
+    }
 
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
@@ -18,6 +23,7 @@ pub fn main() !void {
     }
     const n = try std.fmt.parseInt(u32, args[1], 10);
     const random_buf = try allocator.alloc(u16, n);
+    defer allocator.free(random_buf);
 
     random_buf[0] = 1;
     for (0..random_buf.len) |i| {
